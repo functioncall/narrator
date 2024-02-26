@@ -1,10 +1,8 @@
 # Narrator 
 
-https://twitter.com/charliebholtz/status/1724815159590293764
-
 ## Setup
 
-Clone this repo, and setup and activate a virtualenv:
+setup and activate a virtualenv:
 
 ```bash
 python3 -m pip install virtualenv
