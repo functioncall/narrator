@@ -38,7 +38,7 @@ while True:
 
         # Save the frame as an image file
         print("📸 Say cheese! Saving frame.")
-        path = f"{folder}/frame.jpg"
+        path = f"{folder}/frame.png"
         cv2.imwrite(path, frame)
     else:
         print("Failed to capture image")

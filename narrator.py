@@ -1,11 +1,9 @@
 import os
-from openai import OpenAI
 import base64
-import json
 import time
-import simpleaudio as sa
 import errno
-from elevenlabs import generate, play, set_api_key, voices
+from openai import OpenAI
+from elevenlabs import generate, play, set_api_key
 
 client = OpenAI()
 
@@ -18,25 +16,21 @@ def encode_image(image_path):
                 return base64.b64encode(image_file.read()).decode("utf-8")
         except IOError as e:
             if e.errno != errno.EACCES:
-                # Not a "file in use" error, re-raise
-                raise
-            # File is being written to, wait a bit and retry
-            time.sleep(0.1)
-
+                raise  # Not a "file in use" error, re-raise
+            time.sleep(0.1)  # File is being written to, wait a bit and retry
 
 def play_audio(text):
     audio = generate(text, voice=os.environ.get("ELEVENLABS_VOICE_ID"))
-
+    
     unique_id = base64.urlsafe_b64encode(os.urandom(30)).decode("utf-8").rstrip("=")
     dir_path = os.path.join("narration", unique_id)
     os.makedirs(dir_path, exist_ok=True)
     file_path = os.path.join(dir_path, "audio.wav")
-
+    
     with open(file_path, "wb") as f:
         f.write(audio)
 
     play(audio)
-
 
 def generate_new_line(base64_image):
     return [
@@ -52,51 +46,51 @@ def generate_new_line(base64_image):
         },
     ]
 
-
 def analyze_image(base64_image, script):
+    print("script", script)
     response = client.chat.completions.create(
         model="gpt-4-vision-preview",
         messages=[
             {
                 "role": "system",
                 "content": """
-                You are Sir David Attenborough. Narrate the picture of the human as if it is a nature documentary.
-                Make it snarky and funny. Don't repeat yourself. Make it short. If I do anything remotely interesting, make a big deal about it!
+                You are comedian Andrew Schulz. Narrate the picture of the person. Make it super short like a sentence.
+                Make it snarky and funny in his crowdwork style. Don't repeat yourself. If I do anything remotely interesting, make a big deal about it!.
                 """,
             },
-        ]
-        + script
-        + generate_new_line(base64_image),
-        max_tokens=500,
+        ] + script + generate_new_line(base64_image),
+        max_tokens=100,
     )
     response_text = response.choices[0].message.content
     return response_text
 
-
 def main():
-    script = []
+    # Initial system context message reinforcing the desired narration style
+    script = [
+        {
+            "role": "system",
+            "content": """
+            You are comedian Andrew Schulz. Narrate the picture of the person. Make it super short like a sentence.
+            Make it snarky and funny in his crowdwork style. Don't repeat yourself. If I do anything remotely interesting, make a big deal about it!.
+            """
+        }
+    ]
 
     while True:
-        # path to your image
-        image_path = os.path.join(os.getcwd(), "./frames/frame.jpg")
-
-        # getting the base64 encoding
+        image_path = os.path.join(os.getcwd(), "./frames/frame.png")
         base64_image = encode_image(image_path)
 
-        # analyze posture
-        print("👀 David is watching...")
+        print("👀 Observing...")
         analysis = analyze_image(base64_image, script=script)
 
-        print("🎙️ David says:")
+        print("🎙️ Narration:")
         print(analysis)
 
         play_audio(analysis)
 
         script = script + [{"role": "assistant", "content": analysis}]
 
-        # wait for 5 seconds
-        time.sleep(5)
-
+        time.sleep(5)  # Wait for 5 seconds before the next cycle
 
 if __name__ == "__main__":
     main()
